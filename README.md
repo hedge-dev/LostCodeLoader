@@ -1,6 +1,6 @@
 # LostCodeLoader
 
-Code loader for Sonic Lost World
+Code loader for Sonic Lost World\
 This code loader works by stubbing d3d9.dll
 
 Credits:\
