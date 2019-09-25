@@ -18,6 +18,8 @@ using std::wstring;
 #endif /* _MSC_VER */
 using std::vector;
 
+int baseAddress = (int)GetModuleHandle(NULL);
+
 CodeParser::CodeParser(const string &filename)
 {
 	readCodes(filename);
@@ -46,7 +48,7 @@ CodeParser::~CodeParser()
 
 void *CodeParser::GetAddress(const Code &code, valuetype *regs)
 {
-	void *addr = (void*)((int)code.address + (int)GetModuleHandle(NULL));
+	void *addr = (void*)((int)code.address + baseAddress);
 	if (addr < (void *)16)
 		addr = &regs[(int)addr];
 	if (!code.pointer)
