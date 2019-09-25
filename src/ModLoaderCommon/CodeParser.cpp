@@ -46,7 +46,7 @@ CodeParser::~CodeParser()
 
 void *CodeParser::GetAddress(const Code &code, valuetype *regs)
 {
-	void *addr = code.address;
+	void *addr = (void*)((int)code.address + (int)GetModuleHandle(NULL));
 	if (addr < (void *)16)
 		addr = &regs[(int)addr];
 	if (!code.pointer)

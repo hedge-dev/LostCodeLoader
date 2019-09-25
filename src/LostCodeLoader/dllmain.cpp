@@ -38,6 +38,7 @@ HOOK(bool, __cdecl, SteamAPI_IsSteamRunning, PROC_ADDRESS("steam_api.dll", "Stea
 VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
 {
 	RaiseEvents(modFrameEvents);
+	codeParser.processCodeList(false);
 	originalEndScene(This);
 }
 
@@ -52,7 +53,6 @@ VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9Ex, CreateDeviceEx, UINT Adapter, D3DD
 
 void InitLoader()
 {
-	AllocConsole();
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	HookDirectX();
@@ -73,7 +73,9 @@ void InitLoader()
 	ConfigurationFile cpkredir;
 	ConfigurationFile modsdb;
 	ConfigurationFile::open(exeDir + "\\cpkredir.ini", &cpkredir);
-	ConfigurationFile::open(cpkredir.getString("CPKREDIR", "ModsDbIni", "mods\\ModsDb.ini"), &modsdb);
+	string modsPath = cpkredir.getString("CPKREDIR", "ModsDbIni", "mods\\ModsDb.ini");
+	string modsDir = modsPath.substr(0, modsPath.find_last_of("\\"));
+	ConfigurationFile::open(modsPath, &modsdb);
 
 	if (cpkredir.getBool("CPKREDIR", "Enabled"))
 	{
@@ -110,6 +112,17 @@ void InitLoader()
 				}
 			}
 		}
+	}
+
+	ifstream codesStream(modsDir + "\\Codes.dat", ifstream::binary);
+	if (codesStream.is_open())
+	{
+		int count = codeParser.readCodes(codesStream);
+		if (count > 0)
+		{
+			codeParser.processCodeList(true);
+		}
+		codesStream.close();
 	}
 }
 

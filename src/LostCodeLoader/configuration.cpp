@@ -164,8 +164,8 @@ bool ConfigurationFile::open(const std::string& filePath, ConfigurationFile* con
 	return true;
 
 error:
-	fprintf(stderr, "[QuickBoot] Failed to parse configuration file: %s\n", filePath.c_str());
-	fprintf(stderr, "[QuickBoot] Line %llu: %s\n", lineIndex, errorMsg.c_str());
+	fprintf(stderr, "Failed to parse configuration file: %s\n", filePath.c_str());
+	fprintf(stderr, "Line %llu: %s\n", lineIndex, errorMsg.c_str());
 	stream.close();
 	return false;
 }
