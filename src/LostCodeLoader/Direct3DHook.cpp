@@ -19,8 +19,10 @@ void HookDirectX()
 	DirectXFuncs[1] = GetProcAddress(hD3D, "D3DPERF_GetStatus");
 	DirectXFuncs[2] = GetProcAddress(hD3D, "D3DPERF_BeginEvent");
 	DirectXFuncs[3] = GetProcAddress(hD3D, "D3DPERF_EndEvent");
-	DirectXFuncs[4] = GetProcAddress(hD3D, "Direct3DCreate9");
-	DirectXFuncs[5] = GetProcAddress(hD3D, "Direct3DCreate9Ex");
+	DirectXFuncs[4] = GetProcAddress(hD3D, "D3DPERF_QueryRepeatFrame");
+	DirectXFuncs[5] = GetProcAddress(hD3D, "D3DPERF_SetOptions");
+	DirectXFuncs[6] = GetProcAddress(hD3D, "Direct3DCreate9");
+	DirectXFuncs[7] = GetProcAddress(hD3D, "Direct3DCreate9Ex");
 }
 
 extern "C"
@@ -44,14 +46,24 @@ extern "C"
 	{
 		__asm jmp dword ptr[DirectXFuncs + 12]
 	}
+	
+	void __declspec(naked) __declspec(dllexport) D3DPERF_QueryRepeatFrame()
+	{
+		__asm jmp dword ptr[DirectXFuncs + 16]
+	}
+	
+	void __declspec(naked) __declspec(dllexport) D3DPERF_SetOptions()
+	{
+		__asm jmp dword ptr[DirectXFuncs + 20]
+	}
 
 	void __declspec(naked) __declspec(dllexport) Direct3DCreate9()
 	{
-		__asm jmp dword ptr[DirectXFuncs + 16]
+		__asm jmp dword ptr[DirectXFuncs + 24]
 	}
 
 	HRESULT __declspec(naked) __declspec(dllexport) Direct3DCreate9Ex()
 	{
-		__asm jmp dword ptr[DirectXFuncs + 20]
+		__asm jmp dword ptr[DirectXFuncs + 28]
 	}
 }
