@@ -135,10 +135,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
 		InitLoader();
+        break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
-		RaiseEvents(modExitEvents);
+        break;
     case DLL_PROCESS_DETACH:
+		RaiseEvents(modExitEvents);
         break;
     }
     return TRUE;
