@@ -57,6 +57,7 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	HookDirectX();
 
+	// Create a Direct3D device and hook it's vtable
 	IDirect3D9Ex* d3d;
 	Direct3DCreate9Ex(D3D_SDK_VERSION, &d3d);
 	INSTALL_VTABLE_HOOK(d3d, CreateDeviceEx, 20);
@@ -94,6 +95,7 @@ void InitLoader()
 		mod->Path = path.c_str();
 		ModsInfo->CurrentMod = mod;
 		ModsInfo->ModList->push_back(mod);
+
 		if (ConfigurationFile::open(path, &modConfig))
 		{
 			string dllName = modConfig.getString("Main", "DLLFile");

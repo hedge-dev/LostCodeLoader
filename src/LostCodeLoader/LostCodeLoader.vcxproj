@@ -168,6 +168,7 @@
     <ClInclude Include="helpers.h" />
     <ClInclude Include="LostCodeLoader.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configuration.cpp" />
@@ -186,6 +187,9 @@
     <ProjectReference Include="..\ModLoaderCommon\ModLoaderCommon.vcxproj">
       <Project>{ec0293f5-4bcf-46b2-8133-18caea141c5b}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="LostCodeLoader.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
