@@ -18,8 +18,6 @@ using std::wstring;
 #endif /* _MSC_VER */
 using std::vector;
 
-int baseAddress = (int)GetModuleHandle(NULL);
-
 CodeParser::CodeParser(const string &filename)
 {
 	readCodes(filename);
@@ -48,7 +46,7 @@ CodeParser::~CodeParser()
 
 void *CodeParser::GetAddress(const Code &code, valuetype *regs)
 {
-	void *addr = (void*)((int)code.address + baseAddress);
+	void *addr = (void*)code.address;
 	if (addr < (void *)16)
 		addr = &regs[(int)addr];
 	if (!code.pointer)
@@ -149,7 +147,10 @@ do { \
 
 inline BOOL WriteData(void *writeaddress, const void *data, SIZE_T datasize, SIZE_T *byteswritten)
 {
-	return WriteProcessMemory(GetCurrentProcess(), writeaddress, data, datasize, byteswritten);
+	DWORD old;
+	VirtualProtect(writeaddress, datasize, PAGE_READWRITE, &old);
+	memcpy(writeaddress, data, datasize);
+	return true;
 }
 
 inline BOOL WriteData(void *writeaddress, const void *data, SIZE_T datasize)

@@ -12,6 +12,8 @@
 using namespace std;
 ModInfo* ModsInfo;
 CodeParser codeParser;
+intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
+
 
 // Hook steam so we dont have to use that as launcher everytime
 #pragma region Steam Hooks
@@ -55,7 +57,6 @@ void InitLoader()
 {
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
-	HookDirectX();
 
 	// Create a Direct3D device and hook it's vtable
 	IDirect3D9Ex* d3d;
@@ -128,6 +129,8 @@ void InitLoader()
 	}
 }
 
+static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -136,6 +139,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
+		HookDirectX();
+		if (!memcmp(VersionCheck2, (const char*)(BaseAddress + 0x00001073), sizeof(VersionCheck2)))
+			break; // Config Tool
+
 		InitLoader();
         break;
     case DLL_THREAD_ATTACH:
