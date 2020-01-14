@@ -44,9 +44,9 @@ VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
 	originalEndScene(This);
 }
 
-VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9Ex, CreateDeviceEx, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, D3DDISPLAYMODEEX* pFullscreenDisplayMode, IDirect3DDevice9Ex** ppReturnedDeviceInterface)
+VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9, CreateDevice, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
-	HRESULT result = originalCreateDeviceEx(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
+	HRESULT result = originalCreateDevice(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, EndScene, 42);
 	return result;
 }
@@ -59,13 +59,14 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 
 	// Create a Direct3D device and hook it's vtable
-	IDirect3D9Ex* d3d;
-	Direct3DCreate9Ex(D3D_SDK_VERSION, &d3d);
-	INSTALL_VTABLE_HOOK(d3d, CreateDeviceEx, 20);
+	IDirect3D9* d3d = Direct3DCreate9(D3D_SDK_VERSION);
+	INSTALL_VTABLE_HOOK(d3d, CreateDevice, 16);
 	d3d->Release();
 
 	ModsInfo = new ModInfo();
 	ModsInfo->ModList = new vector<Mod*>();
+	vector<ModInitEvent> postEvents;
+
 	char pathbuf[MAX_PATH];
 	GetModuleFileNameA(NULL, pathbuf, MAX_PATH);
 
@@ -91,24 +92,31 @@ void InitLoader()
 		string name = modsdb.getString("Main", "ActiveMod" + to_string(i));
 		string path = modsdb.getString("Mods", name);
 		string dir = path.substr(0, path.find_last_of("\\")) + "\\";
-		auto mod = new Mod();
-		mod->Name = name.c_str();
-		mod->Path = path.c_str();
-		ModsInfo->CurrentMod = mod;
-		ModsInfo->ModList->push_back(mod);
 
 		if (ConfigurationFile::open(path, &modConfig))
 		{
+			auto mod = new Mod();
+			string title = modConfig.getString("Desc", "Title");
+			mod->Name = title.c_str();
+			mod->Path = path.c_str();
+			ModsInfo->CurrentMod = mod;
+			ModsInfo->ModList->push_back(mod);
 			string dllName = modConfig.getString("Main", "DLLFile");
 			if (dllName.size() > 0)
 			{
+				printf("Loading %s\n", dllName.c_str());
 				HMODULE module = LoadLibraryA((dir + dllName).c_str());
 				if (module) 
 				{
 					ModInitEvent init = (ModInitEvent)GetProcAddress(module, "Init");
+					ModInitEvent postInit = (ModInitEvent)GetProcAddress(module, "PostInit");
 					if (init) 
 					{
 						init(ModsInfo);
+					}
+					if (postInit)
+					{
+						postEvents.push_back(postInit);
 					}
 					RegisterEvent(modFrameEvents, module, "OnFrame");
 					RegisterEvent(modExitEvents, module, "OnExit");
@@ -127,6 +135,9 @@ void InitLoader()
 		}
 		codesStream.close();
 	}
+
+	for (ModInitEvent event : postEvents)
+		event(ModsInfo);
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
