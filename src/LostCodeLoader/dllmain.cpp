@@ -84,7 +84,8 @@ void InitLoader()
 	{
 		LoadLibraryA("cpkredir.dll");
 	}
-
+	
+	vector<string*> strings;
 	int count = modsdb.getInt("Main", "ActiveModCount");
 	for (int i = 0; i < count; i++)
 	{
@@ -92,17 +93,19 @@ void InitLoader()
 		string name = modsdb.getString("Main", "ActiveMod" + to_string(i));
 		string path = modsdb.getString("Mods", name);
 		string dir = path.substr(0, path.find_last_of("\\")) + "\\";
-
 		if (ConfigurationFile::open(path, &modConfig))
 		{
 			auto mod = new Mod();
-			string title = modConfig.getString("Desc", "Title");
-			mod->Name = title.c_str();
-			mod->Path = path.c_str();
+			auto modTitle = new string(modConfig.getString("Desc", "Title"));
+			auto modPath = new string(path);
+			mod->Name = modTitle->c_str();
+			mod->Path = modPath->c_str();
+			strings.push_back(modTitle);
+			strings.push_back(modPath);
 			ModsInfo->CurrentMod = mod;
 			ModsInfo->ModList->push_back(mod);
 			string dllName = modConfig.getString("Main", "DLLFile");
-			if (dllName.size() > 0)
+			if (!dllName.empty())
 			{
 				printf("Loading %s\n", dllName.c_str());
 				HMODULE module = LoadLibraryA((dir + dllName).c_str());
@@ -138,6 +141,8 @@ void InitLoader()
 
 	for (ModInitEvent event : postEvents)
 		event(ModsInfo);
+	for (auto string : strings)
+		delete string;
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
