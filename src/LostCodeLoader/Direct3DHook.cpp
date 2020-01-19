@@ -3,12 +3,14 @@
 #include "windows.h"
 #include "stdio.h"
 #include <Unknwn.h>
+#include "helpers.h"
 
 #pragma warning(disable:6387)
 #define EXPORT comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
 
 HMODULE hD3D;
 void* DirectXFuncs[8];
+DeviceCreateEvent_t* D3DCreateEvent;
 
 void SetupD3DModuleHooks(HMODULE mod)
 {
@@ -87,10 +89,15 @@ extern "C"
 		__asm jmp dword ptr[DirectXFuncs + 20]
 	}
 
-	_declspec(dllexport) __declspec(naked) DWORD* __stdcall Direct3DCreate9(UINT Version)
+	_declspec(dllexport) DWORD* __stdcall Direct3DCreate9(UINT Version)
 	{
 #pragma EXPORT
-		__asm jmp dword ptr[DirectXFuncs + 24]
+		DWORD* d3d = ((Create9*)DirectXFuncs[6])(Version);
+
+		if (D3DCreateEvent)
+			D3DCreateEvent(d3d);
+
+		return d3d;
 	}
 
 	HRESULT __declspec(naked) __declspec(dllexport) Direct3DCreate9Ex()

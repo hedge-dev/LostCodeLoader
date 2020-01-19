@@ -8,7 +8,6 @@
 #include "helpers.h"
 #include <CodeParser.hpp>
 #include <Unknwn.h>
-#include <direct.h>
 
 using namespace std;
 ModInfo* ModsInfo;
@@ -16,7 +15,9 @@ CodeParser codeParser;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
 
 class IDirect3D9;
-class IDirect3DDevice9Ex;
+class IDirect3DDevice9;
+
+IDirect3DDevice9* Device;
 
 // Hook steam so we dont have to use that as launcher everytime
 #pragma region Steam Hooks
@@ -40,21 +41,27 @@ HOOK(bool, __cdecl, SteamAPI_IsSteamRunning, PROC_ADDRESS("steam_api.dll", "Stea
 
 #pragma region DirectX Vtable hooks
 
-VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
+VTABLE_HOOK(void, __stdcall, IDirect3DDevice9, EndScene)
 {
 	RaiseEvents(modFrameEvents);
 	codeParser.processCodeList(false);
 	originalEndScene(This);
 }
 
-VTABLE_HOOK(HRESULT, __stdcall, IUnknown, CreateDevice, UINT Adapter, void* DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, size_t** ppReturnedDeviceInterface)
+VTABLE_HOOK(HRESULT, __stdcall, IUnknown, CreateDevice, UINT Adapter, void* DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
 	HRESULT result = originalCreateDevice(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
-	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, EndScene, 42);
+	Device = *ppReturnedDeviceInterface;
+	INSTALL_VTABLE_HOOK(Device, EndScene, 42);
 	return result;
 }
 
 #pragma endregion
+
+void DeviceCreateEvent(DWORD* device)
+{
+	INSTALL_VTABLE_HOOK((IUnknown*)device, CreateDevice, 16);
+}
 
 void InitLoader()
 {
@@ -150,9 +157,7 @@ void InitLoader()
 		delete string;
 
 	// Create a Direct3D device and hook it's vtable
-	IUnknown* d3d = (IUnknown*)Direct3DCreate9(32);
-	INSTALL_VTABLE_HOOK(d3d, CreateDevice, 16);
-	d3d->Release();
+	D3DCreateEvent = &DeviceCreateEvent;
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
