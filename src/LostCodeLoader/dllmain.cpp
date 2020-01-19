@@ -2,18 +2,21 @@
 #include "pch.h"
 #include "Direct3DHook.h"
 #include "fstream"
-#include "d3d9.h"
 #include "configuration.h"
 #include "LostCodeLoader.h"
 #include "Events.h"
 #include "helpers.h"
 #include <CodeParser.hpp>
+#include <Unknwn.h>
+#include <direct.h>
 
 using namespace std;
 ModInfo* ModsInfo;
 CodeParser codeParser;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
 
+class IDirect3D9;
+class IDirect3DDevice9Ex;
 
 // Hook steam so we dont have to use that as launcher everytime
 #pragma region Steam Hooks
@@ -44,7 +47,7 @@ VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
 	originalEndScene(This);
 }
 
-VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9, CreateDevice, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
+VTABLE_HOOK(HRESULT, __stdcall, IUnknown, CreateDevice, UINT Adapter, void* DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, size_t** ppReturnedDeviceInterface)
 {
 	HRESULT result = originalCreateDevice(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, EndScene, 42);
@@ -57,11 +60,6 @@ void InitLoader()
 {
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
-
-	// Create a Direct3D device and hook it's vtable
-	IDirect3D9* d3d = Direct3DCreate9(D3D_SDK_VERSION);
-	INSTALL_VTABLE_HOOK(d3d, CreateDevice, 16);
-	d3d->Release();
 
 	ModsInfo = new ModInfo();
 	ModsInfo->ModList = new vector<Mod*>();
@@ -108,6 +106,9 @@ void InitLoader()
 			if (!dllName.empty())
 			{
 				printf("Loading %s\n", dllName.c_str());
+				SetDllDirectoryA(dir.c_str());
+				SetCurrentDirectoryA(dir.c_str());
+
 				HMODULE module = LoadLibraryA((dir + dllName).c_str());
 				if (module) 
 				{
@@ -123,10 +124,13 @@ void InitLoader()
 					}
 					RegisterEvent(modFrameEvents, module, "OnFrame");
 					RegisterEvent(modExitEvents, module, "OnExit");
+					SetupD3DModuleHooks(module);
 				}
 			}
 		}
 	}
+
+	SetCurrentDirectoryA(exeDir.c_str());
 
 	ifstream codesStream(modsDir + "\\Codes.dat", ifstream::binary);
 	if (codesStream.is_open())
@@ -141,8 +145,14 @@ void InitLoader()
 
 	for (ModInitEvent event : postEvents)
 		event(ModsInfo);
+
 	for (auto string : strings)
 		delete string;
+
+	// Create a Direct3D device and hook it's vtable
+	IUnknown* d3d = (IUnknown*)Direct3DCreate9(32);
+	INSTALL_VTABLE_HOOK(d3d, CreateDevice, 16);
+	d3d->Release();
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
