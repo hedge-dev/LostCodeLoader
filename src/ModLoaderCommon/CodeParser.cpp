@@ -150,6 +150,7 @@ inline BOOL WriteData(void *writeaddress, const void *data, SIZE_T datasize, SIZ
 	DWORD old;
 	VirtualProtect(writeaddress, datasize, PAGE_READWRITE, &old);
 	memcpy(writeaddress, data, datasize);
+	VirtualProtect(writeaddress, datasize, old, &old);
 	return true;
 }
 
