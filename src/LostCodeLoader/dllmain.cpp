@@ -19,6 +19,8 @@ class IDirect3DDevice9;
 
 IDirect3DDevice9* Device;
 
+void InitMods();
+
 // Hook steam so we dont have to use that as launcher everytime
 #pragma region Steam Hooks
 
@@ -35,6 +37,12 @@ HOOK(bool, __cdecl, SteamAPI_IsSteamRunning, PROC_ADDRESS("steam_api.dll", "Stea
 {
 	originalSteamAPI_IsSteamRunning();
 	return true;
+}
+
+HOOK(void, _cdecl, SteamAPI_Init, PROC_ADDRESS("steam_api.dll", "SteamAPI_Init"))
+{
+	InitMods();
+	originalSteamAPI_Init();
 }
 
 #pragma endregion
@@ -67,7 +75,11 @@ void InitLoader()
 {
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
+	INSTALL_HOOK(SteamAPI_Init);
+}
 
+void InitMods()
+{
 	ModsInfo = new ModInfo();
 	ModsInfo->ModList = new vector<Mod*>();
 	vector<ModInitEvent> postEvents;
@@ -89,7 +101,7 @@ void InitLoader()
 	{
 		LoadLibraryA("cpkredir.dll");
 	}
-	
+
 	vector<string*> strings;
 	int count = modsdb.getInt("Main", "ActiveModCount");
 	for (int i = 0; i < count; i++)
@@ -117,11 +129,11 @@ void InitLoader()
 				SetCurrentDirectoryA(dir.c_str());
 
 				HMODULE module = LoadLibraryA((dir + dllName).c_str());
-				if (module) 
+				if (module)
 				{
 					ModInitEvent init = (ModInitEvent)GetProcAddress(module, "Init");
 					ModInitEvent postInit = (ModInitEvent)GetProcAddress(module, "PostInit");
-					if (init) 
+					if (init)
 					{
 						init(ModsInfo);
 					}
