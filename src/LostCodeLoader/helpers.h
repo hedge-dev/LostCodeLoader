@@ -5,7 +5,8 @@
 #include <windows.h>
 #include <detours.h>
 
-#define BASE_ADDRESS (int)GetModuleHandle(NULL)
+static size_t BASE_ADDRESS = (size_t)GetModuleHandle(NULL);
+static size_t PROCESS_ENTRY = (*(size_t*)(BASE_ADDRESS + 0x150)) + BASE_ADDRESS;
 
 #define FUNCTION_PTR(returnType, callingConvention, function, location, ...) \
 	returnType (callingConvention *function)(__VA_ARGS__) = (returnType(callingConvention*)(__VA_ARGS__))(location)

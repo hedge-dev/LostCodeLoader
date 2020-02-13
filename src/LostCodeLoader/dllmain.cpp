@@ -39,10 +39,16 @@ HOOK(bool, __cdecl, SteamAPI_IsSteamRunning, PROC_ADDRESS("steam_api.dll", "Stea
 	return true;
 }
 
-HOOK(void, _cdecl, SteamAPI_Init, PROC_ADDRESS("steam_api.dll", "SteamAPI_Init"))
+HOOK(int, _cdecl, ProcessStart, PROCESS_ENTRY)
 {
 	InitMods();
-	originalSteamAPI_Init();
+	return originalProcessStart();
+}
+
+HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Shutdown"))
+{
+	RaiseEvents(modExitEvents);
+	originalSteamAPI_Shutdown();
 }
 
 #pragma endregion
@@ -75,7 +81,8 @@ void InitLoader()
 {
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
-	INSTALL_HOOK(SteamAPI_Init);
+	INSTALL_HOOK(ProcessStart);
+	INSTALL_HOOK(SteamAPI_Shutdown);
 }
 
 void InitMods()
@@ -190,9 +197,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
-        break;
     case DLL_PROCESS_DETACH:
-		RaiseEvents(modExitEvents);
         break;
     }
     return TRUE;
