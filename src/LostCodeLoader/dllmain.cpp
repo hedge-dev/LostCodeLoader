@@ -53,28 +53,12 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 
 #pragma endregion
 
-#pragma region DirectX Vtable hooks
-
-VTABLE_HOOK(void, __stdcall, IDirect3DDevice9, EndScene)
+HOOK(void, __fastcall, OnFrameStub, 0x6F5280, void* This)
 {
 	RaiseEvents(modFrameEvents);
 	codeParser.processCodeList(false);
-	originalEndScene(This);
-}
 
-VTABLE_HOOK(HRESULT, __stdcall, IUnknown, CreateDevice, UINT Adapter, void* DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
-{
-	HRESULT result = originalCreateDevice(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
-	Device = *ppReturnedDeviceInterface;
-	INSTALL_VTABLE_HOOK(Device, EndScene, 42);
-	return result;
-}
-
-#pragma endregion
-
-void DeviceCreateEvent(DWORD* device)
-{
-	INSTALL_VTABLE_HOOK((IUnknown*)device, CreateDevice, 16);
+	originalOnFrameStub(This);
 }
 
 void InitLoader()
@@ -83,6 +67,7 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	INSTALL_HOOK(ProcessStart);
 	INSTALL_HOOK(SteamAPI_Shutdown);
+	INSTALL_HOOK(OnFrameStub);
 }
 
 void InitMods()
@@ -174,9 +159,6 @@ void InitMods()
 
 	for (auto string : strings)
 		delete string;
-
-	// Create a Direct3D device and hook it's vtable
-	D3DCreateEvent = &DeviceCreateEvent;
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
