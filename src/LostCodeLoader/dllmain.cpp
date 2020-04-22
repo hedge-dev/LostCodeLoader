@@ -8,11 +8,13 @@
 #include "helpers.h"
 #include <CodeParser.hpp>
 #include <Unknwn.h>
+#include "sigscanner.h"
 
 using namespace std;
 ModInfo* ModsInfo;
 CodeParser codeParser;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
+DWORD OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF", "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????");
 
 class IDirect3D9;
 class IDirect3DDevice9;
@@ -53,28 +55,12 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 
 #pragma endregion
 
-#pragma region DirectX Vtable hooks
-
-VTABLE_HOOK(void, __stdcall, IDirect3DDevice9, EndScene)
+HOOK(void, __fastcall, OnFrameStub, OnFrameStubAddress, void* This)
 {
 	RaiseEvents(modFrameEvents);
 	codeParser.processCodeList(false);
-	originalEndScene(This);
-}
 
-VTABLE_HOOK(HRESULT, __stdcall, IUnknown, CreateDevice, UINT Adapter, void* DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
-{
-	HRESULT result = originalCreateDevice(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
-	Device = *ppReturnedDeviceInterface;
-	INSTALL_VTABLE_HOOK(Device, EndScene, 42);
-	return result;
-}
-
-#pragma endregion
-
-void DeviceCreateEvent(DWORD* device)
-{
-	INSTALL_VTABLE_HOOK((IUnknown*)device, CreateDevice, 16);
+	originalOnFrameStub(This);
 }
 
 void InitLoader()
@@ -83,6 +69,7 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	INSTALL_HOOK(ProcessStart);
 	INSTALL_HOOK(SteamAPI_Shutdown);
+	INSTALL_HOOK(OnFrameStub);
 }
 
 void InitMods()
@@ -174,9 +161,6 @@ void InitMods()
 
 	for (auto string : strings)
 		delete string;
-
-	// Create a Direct3D device and hook it's vtable
-	D3DCreateEvent = &DeviceCreateEvent;
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
