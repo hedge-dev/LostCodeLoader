@@ -170,6 +170,7 @@
     <ClInclude Include="LostCodeLoader.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="sigscanner.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="configuration.cpp" />

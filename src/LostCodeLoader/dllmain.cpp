@@ -8,11 +8,13 @@
 #include "helpers.h"
 #include <CodeParser.hpp>
 #include <Unknwn.h>
+#include "sigscanner.h"
 
 using namespace std;
 ModInfo* ModsInfo;
 CodeParser codeParser;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
+DWORD OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF", "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????");
 
 class IDirect3D9;
 class IDirect3DDevice9;
@@ -53,7 +55,7 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 
 #pragma endregion
 
-HOOK(void, __fastcall, OnFrameStub, 0x6F5280, void* This)
+HOOK(void, __fastcall, OnFrameStub, OnFrameStubAddress, void* This)
 {
 	RaiseEvents(modFrameEvents);
 	codeParser.processCodeList(false);
