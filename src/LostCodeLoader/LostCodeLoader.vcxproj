@@ -162,18 +162,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="configuration.h" />
     <ClInclude Include="Direct3DHook.h" />
     <ClInclude Include="Events.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="helpers.h" />
+    <ClInclude Include="INIReader.h" />
     <ClInclude Include="LostCodeLoader.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sigscanner.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="configuration.cpp" />
     <ClCompile Include="Direct3DHook.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Events.cpp" />

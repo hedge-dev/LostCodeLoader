@@ -2,13 +2,13 @@
 #include "pch.h"
 #include "Direct3DHook.h"
 #include "fstream"
-#include "configuration.h"
 #include "LostCodeLoader.h"
 #include "Events.h"
 #include "helpers.h"
 #include <CodeParser.hpp>
 #include <Unknwn.h>
 #include "sigscanner.h"
+#include "INIReader.h"
 
 using namespace std;
 ModInfo* ModsInfo;
@@ -84,30 +84,29 @@ void InitMods()
 	string exePath(pathbuf);
 	string exeDir = exePath.substr(0, exePath.find_last_of("\\"));
 
-	ConfigurationFile cpkredir;
-	ConfigurationFile modsdb;
-	ConfigurationFile::open(exeDir + "\\cpkredir.ini", &cpkredir);
-	string modsPath = cpkredir.getString("CPKREDIR", "ModsDbIni", "mods\\ModsDb.ini");
+	INIReader cpkredir(exeDir + "\\cpkredir.ini");
+	string modsPath = cpkredir.GetString("CPKREDIR", "ModsDbIni", "mods\\ModsDb.ini");
 	string modsDir = modsPath.substr(0, modsPath.find_last_of("\\"));
-	ConfigurationFile::open(modsPath, &modsdb);
+	INIReader modsdb(modsPath);
 
-	if (cpkredir.getBool("CPKREDIR", "Enabled"))
+	if (cpkredir.GetBoolean("CPKREDIR", "Enabled", true))
 	{
 		LoadLibraryA("cpkredir.dll");
 	}
 
 	vector<string*> strings;
-	int count = modsdb.getInt("Main", "ActiveModCount");
+	int count = modsdb.GetInteger("Main", "ActiveModCount", 0);
 	for (int i = 0; i < count; i++)
 	{
-		ConfigurationFile modConfig;
-		string name = modsdb.getString("Main", "ActiveMod" + to_string(i));
-		string path = modsdb.getString("Mods", name);
+		string name = modsdb.GetString("Main", "ActiveMod" + to_string(i), "");
+		string path = modsdb.GetString("Mods", name, "");
 		string dir = path.substr(0, path.find_last_of("\\")) + "\\";
-		if (ConfigurationFile::open(path, &modConfig))
+		INIReader modConfig(path);
+
+		if (modConfig.ParseError() == 0)
 		{
 			auto mod = new Mod();
-			auto modTitle = new string(modConfig.getString("Desc", "Title"));
+			auto modTitle = new string(modConfig.GetString("Desc", "Title", ""));
 			auto modPath = new string(path);
 			mod->Name = modTitle->c_str();
 			mod->Path = modPath->c_str();
@@ -115,7 +114,7 @@ void InitMods()
 			strings.push_back(modPath);
 			ModsInfo->CurrentMod = mod;
 			ModsInfo->ModList->push_back(mod);
-			string dllName = modConfig.getString("Main", "DLLFile");
+			string dllName = modConfig.GetString("Main", "DLLFile", "");
 			if (!dllName.empty())
 			{
 				printf("Loading %s\n", dllName.c_str());
