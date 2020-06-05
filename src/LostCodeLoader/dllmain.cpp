@@ -14,15 +14,10 @@ using namespace std;
 ModInfo* ModsInfo;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
 
-const char* OnFrameStubSignature = "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF";
-const char* OnFrameStubMask = "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????";
-
 DWORD OnFrameStubAddress = 0;
 
-class IDirect3D9;
-class IDirect3DDevice9;
-
-IDirect3DDevice9* Device;
+class IDirect3D9Ex;
+class IDirect3DDevice9Ex;
 
 void InitMods();
 
@@ -58,12 +53,27 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 
 #pragma endregion
 
-HOOK(void, __fastcall, OnFrameStub, OnFrameStubAddress, void* This)
+#pragma region DirectX Vtable hooks
+
+VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
 {
 	RaiseEvents(modFrameEvents);
 	CommonLoader::CommonLoader::RaiseUpdates();
+	originalEndScene(This);
+}
 
-	originalOnFrameStub(This);
+VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9Ex, CreateDeviceEx, UINT Adapter, DWORD DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, void* pFullscreenDisplayMode, IDirect3DDevice9Ex** ppReturnedDeviceInterface)
+{
+	HRESULT result = originalCreateDeviceEx(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
+	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, EndScene, 42);
+	return result;
+}
+
+#pragma endregion
+
+void DeviceCreateEvent(void* d3d)
+{
+	INSTALL_VTABLE_HOOK(*((IDirect3D9Ex**)d3d), CreateDeviceEx, 20);
 }
 
 void InitLoader()
@@ -72,7 +82,7 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	INSTALL_HOOK(ProcessStart);
 	INSTALL_HOOK(SteamAPI_Shutdown);
-	INSTALL_HOOK(OnFrameStub);
+	InitMods();
 }
 
 void InitMods()
@@ -159,9 +169,9 @@ void InitMods()
 
 	for (auto string : strings)
 		delete string;
-}
 
-static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
+	D3DCreateEvent = &DeviceCreateEvent;
+}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -172,13 +182,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
 		HookDirectX();
-		if (!memcmp(VersionCheck2, (const char*)(BaseAddress + 0x00001073), sizeof(VersionCheck2)))
-			break; // Config Tool
-
-		OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), OnFrameStubSignature, OnFrameStubMask);
-
-		if(OnFrameStubAddress)
-			InitLoader();
+		InitLoader();
         
 		break;
     case DLL_THREAD_ATTACH:

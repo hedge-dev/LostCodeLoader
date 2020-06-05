@@ -3,7 +3,6 @@
 #include "windows.h"
 #include "stdio.h"
 #include <Unknwn.h>
-#include "helpers.h"
 
 #pragma warning(disable:6387)
 #define EXPORT comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
@@ -89,19 +88,20 @@ extern "C"
 		__asm jmp dword ptr[DirectXFuncs + 20]
 	}
 
-	_declspec(dllexport) DWORD* __stdcall Direct3DCreate9(UINT Version)
+	_declspec(dllexport) __declspec(naked) DWORD* __stdcall Direct3DCreate9(UINT Version)
 	{
 #pragma EXPORT
-		DWORD* d3d = ((Create9*)DirectXFuncs[6])(Version);
+		__asm jmp dword ptr[DirectXFuncs + 24]
+	}
+
+	__declspec(dllexport) HRESULT __stdcall Direct3DCreate9Ex(UINT Version, void* d3d)
+	{
+#pragma EXPORT
+		HRESULT result = ((Create9Ex*)DirectXFuncs[7])(Version, d3d);
 
 		if (D3DCreateEvent)
 			D3DCreateEvent(d3d);
 
-		return d3d;
-	}
-
-	HRESULT __declspec(naked) __declspec(dllexport) Direct3DCreate9Ex()
-	{
-		__asm jmp dword ptr[DirectXFuncs + 28]
+		return result;
 	}
 }
