@@ -74,14 +74,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\CommonLoader;$(IncludePath)</IncludePath>
+    <IncludePath>..\CommonLoader\CommonLoader;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\CommonLoader;$(IncludePath)</IncludePath>
+    <IncludePath>..\CommonLoader\CommonLoader;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -186,12 +186,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CommonLoader\CommonLoader.vcxproj">
-      <Project>{e6278a28-e93a-42a9-ae64-e7a5e8d39d7a}</Project>
-    </ProjectReference>
+    <ResourceCompile Include="LostCodeLoader.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="LostCodeLoader.rc" />
+    <ProjectReference Include="..\CommonLoader\CommonLoader\CommonLoader.vcxproj">
+      <Project>{e6278a28-e93a-42a9-ae64-e7a5e8d39d7a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

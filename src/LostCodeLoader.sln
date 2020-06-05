@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GenerationsCodeLoader", "LostCodeLoader\LostCodeLoader.vcxproj", "{2723B1EC-93AB-47F6-AD50-0C21A6CDC7BF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonLoader", "CommonLoader\CommonLoader.vcxproj", "{E6278A28-E93A-42A9-AE64-E7A5E8D39D7A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonLoader", "CommonLoader\CommonLoader\CommonLoader.vcxproj", "{E6278A28-E93A-42A9-AE64-E7A5E8D39D7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
