@@ -5,16 +5,19 @@
 #include "LostCodeLoader.h"
 #include "Events.h"
 #include "helpers.h"
-#include <CodeParser.hpp>
 #include <Unknwn.h>
 #include "sigscanner.h"
 #include "INIReader.h"
+#include <CommonLoader.h>
 
 using namespace std;
 ModInfo* ModsInfo;
-CodeParser codeParser;
 intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
-DWORD OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF", "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????");
+
+const char* OnFrameStubSignature = "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF";
+const char* OnFrameStubMask = "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????";
+
+DWORD OnFrameStubAddress = 0;
 
 class IDirect3D9;
 class IDirect3DDevice9;
@@ -58,7 +61,7 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 HOOK(void, __fastcall, OnFrameStub, OnFrameStubAddress, void* This)
 {
 	RaiseEvents(modFrameEvents);
-	codeParser.processCodeList(false);
+	CommonLoader::CommonLoader::RaiseUpdates();
 
 	originalOnFrameStub(This);
 }
@@ -77,6 +80,7 @@ void InitMods()
 	ModsInfo = new ModInfo();
 	ModsInfo->ModList = new vector<Mod*>();
 	vector<ModInitEvent> postEvents;
+	vector<ModInitEvent> initEvents;
 
 	char pathbuf[MAX_PATH];
 	GetModuleFileNameA(NULL, pathbuf, MAX_PATH);
@@ -128,7 +132,7 @@ void InitMods()
 					ModInitEvent postInit = (ModInitEvent)GetProcAddress(module, "PostInit");
 					if (init)
 					{
-						init(ModsInfo);
+						initEvents.push_back(init);
 					}
 					if (postInit)
 					{
@@ -144,16 +148,11 @@ void InitMods()
 
 	SetCurrentDirectoryA(exeDir.c_str());
 
-	ifstream codesStream(modsDir + "\\Codes.dat", ifstream::binary);
-	if (codesStream.is_open())
-	{
-		int count = codeParser.readCodes(codesStream);
-		if (count > 0)
-		{
-			codeParser.processCodeList(true);
-		}
-		codesStream.close();
-	}
+	CommonLoader::CommonLoader::InitializeAssemblyLoader((modsDir + "\\Codes.dll").c_str());
+	CommonLoader::CommonLoader::RaiseInitializers();
+
+	for (ModInitEvent event : initEvents)
+		event(ModsInfo);
 
 	for (ModInitEvent event : postEvents)
 		event(ModsInfo);
@@ -176,8 +175,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		if (!memcmp(VersionCheck2, (const char*)(BaseAddress + 0x00001073), sizeof(VersionCheck2)))
 			break; // Config Tool
 
-		InitLoader();
-        break;
+		OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), OnFrameStubSignature, OnFrameStubMask);
+
+		if(OnFrameStubAddress)
+			InitLoader();
+        
+		break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
