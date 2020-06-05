@@ -1,0 +1,3 @@
+[submodule "src/CommonLoader"]
+	path = src/CommonLoader
+	url = https://github.com/Sajidur78/CommonLoader
