@@ -82,7 +82,6 @@ void InitLoader()
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
 	INSTALL_HOOK(ProcessStart);
 	INSTALL_HOOK(SteamAPI_Shutdown);
-	InitMods();
 }
 
 void InitMods()
