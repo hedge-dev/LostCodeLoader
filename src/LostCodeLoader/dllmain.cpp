@@ -98,6 +98,9 @@ void InitMods()
 		LoadLibraryA("cpkredir.dll");
 	}
 
+	CommonLoader::CommonLoader::InitializeAssemblyLoader((modsDir + "\\Codes.dll").c_str());
+	CommonLoader::CommonLoader::RaiseInitializers();
+
 	vector<string*> strings;
 	int count = modsdb.GetInteger("Main", "ActiveModCount", 0);
 	for (int i = 0; i < count; i++)
@@ -132,7 +135,7 @@ void InitMods()
 					ModInitEvent postInit = (ModInitEvent)GetProcAddress(module, "PostInit");
 					if (init)
 					{
-						initEvents.push_back(init);
+						init(ModsInfo);
 					}
 					if (postInit)
 					{
@@ -147,12 +150,6 @@ void InitMods()
 	}
 
 	SetCurrentDirectoryA(exeDir.c_str());
-
-	CommonLoader::CommonLoader::InitializeAssemblyLoader((modsDir + "\\Codes.dll").c_str());
-	CommonLoader::CommonLoader::RaiseInitializers();
-
-	for (ModInitEvent event : initEvents)
-		event(ModsInfo);
 
 	for (ModInitEvent event : postEvents)
 		event(ModsInfo);
