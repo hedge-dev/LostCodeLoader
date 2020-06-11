@@ -1,4 +1,6 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
+
+#define INI_MAX_LINE 2000
+
 #include "pch.h"
 #include "Direct3DHook.h"
 #include "fstream"
