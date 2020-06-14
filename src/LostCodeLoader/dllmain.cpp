@@ -19,7 +19,7 @@ intptr_t BaseAddress = (intptr_t)GetModuleHandle(nullptr);
 const char* OnFrameStubSignature = "\x56\x8B\xF1\x8D\x86\x48\x76\x00\x00\x50\xE8\x61\xE0\x02\x00\x8B\x4E\x64\x8B\x11\x8B\x82\xAC\x00\x00\x00\x83\xC4\x04\xFF\xD0\xFF\x8E\x40\x76\x00\x00\x8B\x8E\x4C\x76\x00\x00\x8B\x89\x80\x00\x00\x00\x5E\xE9\x79\xEF\xF6\xFF";
 const char* OnFrameStubMask = "xxxxxxxxxx?????xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx??????";
 
-DWORD OnFrameStubAddress = 0;
+DWORD OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), OnFrameStubSignature, OnFrameStubMask);
 
 class IDirect3D9;
 class IDirect3DDevice9;
@@ -72,9 +72,9 @@ void InitLoader()
 {
 	INSTALL_HOOK(SteamAPI_RestartAppIfNecessary);
 	INSTALL_HOOK(SteamAPI_IsSteamRunning);
-	INSTALL_HOOK(ProcessStart);
 	INSTALL_HOOK(SteamAPI_Shutdown);
 	INSTALL_HOOK(OnFrameStub);
+	INSTALL_HOOK(ProcessStart);
 }
 
 void InitMods()
@@ -173,8 +173,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		HookDirectX();
 		if (!memcmp(VersionCheck2, (const char*)(BaseAddress + 0x00001073), sizeof(VersionCheck2)))
 			break; // Config Tool
-
-		OnFrameStubAddress = SignatureScanner::FindSignature(BaseAddress, DetourGetModuleSize((HMODULE)BASE_ADDRESS), OnFrameStubSignature, OnFrameStubMask);
 
 		if(OnFrameStubAddress)
 			InitLoader();
