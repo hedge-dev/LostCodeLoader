@@ -1,7 +1,6 @@
-
+#include "pch.h"
 #define INI_MAX_LINE 2000
 
-#include "pch.h"
 #include "Direct3DHook.h"
 #include "fstream"
 #include "LostCodeLoader.h"
