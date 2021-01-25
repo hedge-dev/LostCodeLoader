@@ -1,6 +1,3 @@
-
-#define INI_MAX_LINE 2000
-
 #include "pch.h"
 #include "Direct3DHook.h"
 #include "fstream"
@@ -11,6 +8,12 @@
 #include "sigscanner.h"
 #include "INIReader.h"
 #include <CommonLoader.h>
+#include <windows.h>
+#include <vector>
+#include <unordered_map>
+#include "Shlwapi.h"
+
+#define INI_MAX_LINE 2000
 
 using namespace std;
 ModInfo* ModsInfo;
@@ -28,7 +31,12 @@ IDirect3DDevice9* Device;
 
 void InitMods();
 
-// Hook steam so we dont have to use that as launcher everytime
+std::vector<std::wstring> ReplaceDirs;
+std::unordered_map<std::wstring, std::wstring> ReplaceMap;
+
+std::wstring GameDirectory;
+
+// Hook steam so we don't have to use that as launcher every time
 #pragma region Steam Hooks
 
 HOOK(bool, __cdecl, SteamAPI_RestartAppIfNecessary, PROC_ADDRESS("steam_api.dll", "SteamAPI_RestartAppIfNecessary"), uint32_t appid)
@@ -57,8 +65,49 @@ HOOK(void, _cdecl, SteamAPI_Shutdown, PROC_ADDRESS("steam_api.dll", "SteamAPI_Sh
 	RaiseEvents(modExitEvents);
 	originalSteamAPI_Shutdown();
 }
-
 #pragma endregion
+
+HOOK(HANDLE, __stdcall, _CreateFileW, PROC_ADDRESS("Kernel32.dll", "CreateFileW"), LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+{
+	std::wstring path = lpFileName;
+
+	auto position = path.find(L"\\movie\\");
+	if (position != wstring::npos)
+	{
+		position = path.find(GameDirectory);
+		if (position != wstring::npos)
+		{
+			path = path.substr(GameDirectory.length() + 1);
+		}
+    }
+	
+	if (ReplaceMap.find(path) == ReplaceMap.end())
+	{
+		for (auto dir : ReplaceDirs)
+		{
+			std::wstring tempPath = dir + L"\\" + path;
+			if (PathFileExistsW(tempPath.c_str()))
+			{
+				path = tempPath;
+				ReplaceMap[lpFileName] = path;
+				break;
+			}
+		}
+	}
+	else
+	{
+		path = ReplaceMap[lpFileName];
+	}
+	
+	return original_CreateFileW(path.c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
+HOOK(HANDLE, __stdcall, _CreateFileA, PROC_ADDRESS("Kernel32.dll", "CreateFileA"), LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+{
+	std::string path_ = lpFileName;
+	return CreateFileW(std::wstring(path_.begin(), path_.end()).c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
 
 HOOK(void, __fastcall, OnFrameStub, OnFrameStubAddress, void* This)
 {
@@ -84,11 +133,13 @@ void InitMods()
 	vector<ModInitEvent> postEvents;
 	vector<ModInitEvent> initEvents;
 
-	char pathbuf[MAX_PATH];
-	GetModuleFileNameA(NULL, pathbuf, MAX_PATH);
+	wchar_t wpathbuf[MAX_PATH];
+	GetModuleFileNameW(NULL, wpathbuf, MAX_PATH);
+	GameDirectory = std::wstring(wpathbuf);
+	GameDirectory = GameDirectory.substr(0, GameDirectory.find_last_of(L"\\"));
 
-	string exePath(pathbuf);
-	string exeDir = exePath.substr(0, exePath.find_last_of("\\"));
+	string exeDir = std::string(GameDirectory.begin(), GameDirectory.end());
+	
 
 	INIReader cpkredir(exeDir + "\\cpkredir.ini");
 	string modsPath = cpkredir.GetString("CPKREDIR", "ModsDbIni", "mods\\ModsDb.ini");
@@ -148,16 +199,27 @@ void InitMods()
 					SetupD3DModuleHooks(module);
 				}
 			}
+			
+			int includeCount = modConfig.GetInteger("Main", "IncludeDirCount", 0);
+			for (int i = 0; i < includeCount; ++i)
+			{
+				auto includeDir = dir + modConfig.GetString("Main", "IncludeDir" + std::to_string(i), ".");
+				ReplaceDirs.push_back(std::wstring(includeDir.begin(), includeDir.end()));	
+            }
 		}
+
 	}
 
-	SetCurrentDirectoryA(exeDir.c_str());
+	SetCurrentDirectoryW(GameDirectory.c_str());
 
 	for (ModInitEvent event : postEvents)
 		event(ModsInfo);
 
 	for (auto string : strings)
 		delete string;
+
+	INSTALL_HOOK(_CreateFileA);
+	INSTALL_HOOK(_CreateFileW);
 }
 
 static const char VersionCheck2[] = { 0xE8u, 0xE8u, 0x0C, 0x02, 0x00 };
