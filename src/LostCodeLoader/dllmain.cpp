@@ -198,6 +198,19 @@ void InitMods()
 					RegisterEvent(modExitEvents, module, "OnExit");
 					SetupD3DModuleHooks(module);
 				}
+				else
+				{
+					DWORD error = GetLastError();
+					LPSTR msgBuffer = nullptr;
+
+					DWORD msgSize = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+						NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msgBuffer, 0, NULL);
+
+					std::string msg = "Failed to load " + dllName + "\n" + std::string(msgBuffer, msgSize);
+					MessageBoxA(NULL, msg.c_str(), "GenerationsCodeLoader", MB_OK);
+
+					LocalFree(msgBuffer);
+				}
 			}
 			
 			int includeCount = modConfig.GetInteger("Main", "IncludeDirCount", 0);

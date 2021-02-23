@@ -3,6 +3,7 @@
 // Used by LostCodeLoader.rc
 //
 #define MIN_CODE_VERSION                101
+#define MAX_CODE_VERSION                102
 
 // Next default values for new objects
 // 
