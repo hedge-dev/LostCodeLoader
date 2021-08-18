@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "NeverFinishAnything"
             VALUE "FileDescription", "Code loader for Sonic Generations"
-            VALUE "FileVersion", "2.4.4"
+            VALUE "FileVersion", "2.4.4.0"
             VALUE "InternalName", "GenerationsCodeLoader.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020"
             VALUE "OriginalFilename", "GenerationsCodeLoader.dll"
             VALUE "ProductName", "Generations Code Loader"
-            VALUE "ProductVersion", "2.4.4"
+            VALUE "ProductVersion", "2.4.4.0"
         END
     END
     BLOCK "VarFileInfo"
