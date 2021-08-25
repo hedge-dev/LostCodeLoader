@@ -105,17 +105,17 @@ HOOK(HANDLE, __stdcall, _CreateFileA, PROC_ADDRESS("Kernel32.dll", "CreateFileA"
 
 #pragma region DirectX Vtable hooks
 
-VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, EndScene)
+VTABLE_HOOK(void, __stdcall, IDirect3DDevice9Ex, Present, void* pSrcRect, void* pDestRect, HWND window, void* pDirtyRegion)
 {
 	RaiseEvents(modFrameEvents);
 	CommonLoader::CommonLoader::RaiseUpdates();
-	originalEndScene(This);
+	originalPresent(This, pSrcRect, pDestRect, window, pDirtyRegion);
 }
 
 VTABLE_HOOK(HRESULT, __stdcall, IDirect3D9Ex, CreateDeviceEx, UINT Adapter, DWORD DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, void* pPresentationParameters, void* pFullscreenDisplayMode, IDirect3DDevice9Ex** ppReturnedDeviceInterface)
 {
 	HRESULT result = originalCreateDeviceEx(This, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
-	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, EndScene, 42);
+	INSTALL_VTABLE_HOOK(*ppReturnedDeviceInterface, Present, 17);
 	return result;
 }
 
