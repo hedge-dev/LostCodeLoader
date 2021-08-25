@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "NeverFinishAnything"
-            VALUE "FileDescription", "Code loader for Sonic Generations"
+            VALUE "FileDescription", "Code loader for Sonic Lost World"
             VALUE "FileVersion", "2.5.1.0"
-            VALUE "InternalName", "GenerationsCodeLoader.dll"
+            VALUE "InternalName", "LostCodeLoader.dll"
             VALUE "LegalCopyright", "Copyright (C) 2020"
-            VALUE "OriginalFilename", "GenerationsCodeLoader.dll"
-            VALUE "ProductName", "Generations Code Loader"
+            VALUE "OriginalFilename", "LostCodeLoader.dll"
+            VALUE "ProductName", "Lost Code Loader"
             VALUE "ProductVersion", "2.5.1.0"
         END
     END
