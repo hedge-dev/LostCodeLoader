@@ -23,7 +23,7 @@
     <ProjectGuid>{2723B1EC-93AB-47F6-AD50-0C21A6CDC7BF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>LostCodeLoader</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>LostCodeLoader</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -101,7 +101,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>lib\detours.lib;lib\syelog.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lib\detours.lib;lib\syelog.lib;Shlwapi.lib;Shell32.lib;User32.lib;CommonLoader.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../CommonLoader/CommonLoader/$(Platform)/$(Configuration)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -139,7 +140,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>lib\detours.lib;lib\syelog.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lib\detours.lib;lib\syelog.lib;Shlwapi.lib;Shell32.lib;User32.lib;CommonLoader.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../CommonLoader/CommonLoader/$(Platform)/$(Configuration)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -187,11 +189,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="LostCodeLoader.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CommonLoader\CommonLoader\CommonLoader.vcxproj">
-      <Project>{e6278a28-e93a-42a9-ae64-e7a5e8d39d7a}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
