@@ -156,7 +156,7 @@ void InitMods()
 
 	vector<string*> strings;
 	int count = modsdb.GetInteger("Main", "ActiveModCount", 0);
-	for (int i = count - 1; i > 0; i--)
+	for (int i = count - 1; i >= 0; i--)
 	{
 		string name = modsdb.GetString("Main", "ActiveMod" + to_string(i), "");
 		string path = modsdb.GetString("Mods", name, "");
