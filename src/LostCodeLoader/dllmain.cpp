@@ -83,9 +83,9 @@ HOOK(HANDLE, __stdcall, _CreateFileW, PROC_ADDRESS("Kernel32.dll", "CreateFileW"
 	
 	if (ReplaceMap.find(path) == ReplaceMap.end())
 	{
-		for (auto dir : ReplaceDirs)
+		for (int i = ReplaceDirs.size() - 1; i >= 0; i--)
 		{
-			std::wstring tempPath = dir + L"\\" + path;
+			std::wstring tempPath = ReplaceDirs[i] + L"\\" + path;
 			if (PathFileExistsW(tempPath.c_str()))
 			{
 				path = tempPath;
@@ -217,8 +217,8 @@ void InitMods()
 			for (int i = 0; i < includeCount; ++i)
 			{
 				auto includeDir = dir + modConfig.GetString("Main", "IncludeDir" + std::to_string(i), ".");
-				ReplaceDirs.push_back(std::wstring(includeDir.begin(), includeDir.end()));	
-            }
+				ReplaceDirs.push_back(std::wstring(includeDir.begin(), includeDir.end()));
+			}
 		}
 
 	}
